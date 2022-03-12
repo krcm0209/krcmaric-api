@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SAM Template for krcmaric.com API
+
+Globals:
+  Function:
+    Timeout: 3
+
+Parameters:
+  ApiDomain:
+    Type: String
+    Default: krcmaric.com
+  DomainCertificateArn:
+    Type: String
+    Default: !Sub "arn:aws:acm:${AWS::Region}:${AWS::AccountId}:certificate/20e5fe5e-eaa7-4bc6-8df7-a5f103132fd7"
+
+Resources:
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: api/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - arm64
+      Events:
+        GetViews:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /views
+            Method: get
+      Environment:
+        Variables:
+          COUNTER_TABLE: !Ref VisitorCounterTable
+      Role: !GetAtt ApiFunctionRole.Arn
+  ApiFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+      Policies:
+        - PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: dynamodb:UpdateItem
+                Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${VisitorCounterTable}
+          PolicyName: DynamoDbUpdateItem
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration: !Sub ${ApiDomain}
+      DisableExecuteApiEndpoint: true
+      Domain:
+        CertificateArn: !Ref DomainCertificateArn
+        DomainName: !Sub api.${ApiDomain}
+        Route53:
+          HostedZoneName: !Sub ${ApiDomain}.
+          IpV6: true
+  VisitorCounterTable:
+    Type: AWS::DynamoDB::GlobalTable
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      Replicas:
+        - Region: us-east-1
+          TableClass: STANDARD
+      TableName: !Sub ${ApiDomain}-visitor-counter
+
+Outputs:
+  ApiFunctionViewsEndpoint:
+    Description: "API Gateway endpoint URL for getting page view count"
+    Value: !Sub "https://api.${ApiDomain}/views/"
+  ApiFunction:
+    Description: "API Lambda Function ARN"
+    Value: !GetAtt ApiFunction.Arn
+  ApiFunctionIamRole:
+    Description: "Implicit IAM Role created for API function"
+    Value: !GetAtt ApiFunctionRole.Arn
