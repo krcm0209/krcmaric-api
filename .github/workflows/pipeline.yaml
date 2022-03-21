@@ -96,12 +96,14 @@ jobs:
       - name: Deploy to feature stack in the testing account
         shell: bash
         run: |
-          sam deploy --stack-name $(echo ${GITHUB_REF##*/} | tr -cd '[a-zA-Z0-9-]') \
+          GH_REF=$(echo ${GITHUB_REF##*/} | tr -cd '[a-zA-Z0-9-]') && \
+          sam deploy --stack-name $(echo ${GH_REF}) \
             --capabilities CAPABILITY_IAM \
             --region ${TESTING_REGION} \
             --s3-bucket ${TESTING_ARTIFACTS_BUCKET} \
             --no-fail-on-empty-changeset \
-            --role-arn ${TESTING_CLOUDFORMATION_EXECUTION_ROLE}
+            --role-arn ${TESTING_CLOUDFORMATION_EXECUTION_ROLE} \
+            --parameter-overrides DevName=-$(echo ${GH_REF})
 
   build-and-package:
     if: github.ref == 'refs/heads/trunk'
