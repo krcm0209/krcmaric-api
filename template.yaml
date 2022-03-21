@@ -79,7 +79,6 @@ Resources:
       Replicas:
         - Region: us-east-1
           TableClass: STANDARD
-      TableName: !Sub ${ApiDomain}-visitor-counter
 
 Outputs:
   ApiFunctionViewsEndpoint:
