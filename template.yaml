@@ -86,7 +86,7 @@ Resources:
 Outputs:
   ApiFunctionViewsEndpoint:
     Description: "API Gateway endpoint URL for getting page view count"
-    Value: !Sub "https://api.${ApiDomain}/views/"
+    Value: !Sub "https://api${DevName}.${ApiDomain}/views/"
   ApiFunction:
     Description: "API Lambda Function ARN"
     Value: !GetAtt ApiFunction.Arn
