@@ -13,7 +13,7 @@ Parameters:
     Default: krcmaric.com
   DomainCertificateArn:
     Type: String
-    Default: !Sub "arn:aws:acm:${AWS::Region}:${AWS::AccountId}:certificate/20e5fe5e-eaa7-4bc6-8df7-a5f103132fd7"
+    Default: "arn:aws:acm:us-east-1:931037674524:certificate/20e5fe5e-eaa7-4bc6-8df7-a5f103132fd7"
 
 Resources:
   ApiFunction:
